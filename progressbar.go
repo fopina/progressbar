@@ -26,14 +26,14 @@ type ProgressBar struct {
 type State struct {
 	CurrentPercent float64
 	CurrentBytes   float64
-	MaxBytes       int
+	MaxBytes       int64
 	SecondsSince   float64
 	SecondsLeft    float64
 	KBsPerSecond   float64
 }
 
 type state struct {
-	currentNum        int
+	currentNum        int64
 	currentPercent    int
 	lastPercent       int
 	currentSaucerSize int
@@ -46,7 +46,7 @@ type state struct {
 }
 
 type config struct {
-	max                  int // max number of the counter
+	max                  int64 // max number of the counter
 	width                int
 	writer               io.Writer
 	theme                Theme
@@ -54,7 +54,7 @@ type config struct {
 	description          string
 	// whether the output is expected to contain color codes
 	colorCodes bool
-	maxBytes   int
+	maxBytes   int64
 	// show the iterations per second
 	showIterationsPerSecond bool
 	showIterationsCount     bool
@@ -119,7 +119,7 @@ func OptionEnableColorCodes(colorCodes bool) Option {
 }
 
 // OptionSetBytes will also print the bytes/second
-func OptionSetBytes(maxBytes int) Option {
+func OptionSetBytes(maxBytes int64) Option {
 	return func(p *ProgressBar) {
 		p.config.maxBytes = maxBytes
 	}
@@ -150,7 +150,7 @@ func OptionThrottle(duration time.Duration) Option {
 var defaultTheme = Theme{Saucer: "█", SaucerPadding: " ", BarStart: "|", BarEnd: "|"}
 
 // NewOptions constructs a new instance of ProgressBar, with any options you specify
-func NewOptions(max int, options ...Option) *ProgressBar {
+func NewOptions(max int64, options ...Option) *ProgressBar {
 	b := ProgressBar{
 		state: getBlankState(),
 		config: config{
@@ -183,7 +183,7 @@ func getBlankState() state {
 
 // New returns a new ProgressBar
 // with the specified maximum
-func New(max int) *ProgressBar {
+func New(max int64) *ProgressBar {
 	return NewOptions(max)
 }
 
@@ -210,7 +210,7 @@ func (p *ProgressBar) Finish() error {
 }
 
 // Add with increase the current count on the progress bar
-func (p *ProgressBar) Set(num int) error {
+func (p *ProgressBar) Set(num int64) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -237,8 +237,12 @@ func (p *ProgressBar) Set(num int) error {
 	return nil
 }
 
-func (p *ProgressBar) Add(num int) error {
+func (p *ProgressBar) Add64(num int64) error {
 	return p.Set(p.state.currentNum + num)
+}
+
+func (p *ProgressBar) Add(num int) error {
+	return p.Add64(int64(num))
 }
 
 // Clear erases the progress bar from the current line
